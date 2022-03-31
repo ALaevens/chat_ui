@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-const String BASE_URL = "https://gearnotes2000.xyz";
-const String BASE_WS_URL = "wss://gearnotes2000.xyz";
+const String BASE_URL = "https://latandao.gearnotes2000.xyz";
+const String BASE_WS_URL = "wss://latandao.gearnotes2000.xyz";
 
 Future<String> login(String username, String password) async {
   const String REQUEST_URL = BASE_URL + "/auth/token";
