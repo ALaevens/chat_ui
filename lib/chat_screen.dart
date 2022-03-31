@@ -50,6 +50,9 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
 
+    usernameToDisplayName(widget.args.username).then((value) {
+      _messageListKey.currentState!.setDisplayName(value);
+    });
     // only need to pull the history once
     loadHistory(widget.args.token, widget.args.username, widget.args.receiver)
         .then((List<List<String>> value) {
@@ -147,6 +150,7 @@ class MessageWindow extends StatefulWidget {
 // Window containing all sent / received messages
 class _MessageWindowState extends State<MessageWindow> {
   List<List<String>> history = [];
+  String myDisplay = "";
 
   // add one to history
   void addMessage(String sender, String content) {
@@ -160,6 +164,10 @@ class _MessageWindowState extends State<MessageWindow> {
     setState(() => history = hist);
   }
 
+  void setDisplayName(String display) {
+    setState(() => myDisplay = display);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
@@ -167,7 +175,9 @@ class _MessageWindowState extends State<MessageWindow> {
       itemBuilder: (context, i) {
         if (i % 2 == 0) {
           return Message(
-              sender: history[i ~/ 2][0], content: history[i ~/ 2][1]);
+              sender: history[i ~/ 2][0],
+              content: history[i ~/ 2][1],
+              me: myDisplay);
         } else {
           return const Divider();
         }
@@ -178,29 +188,25 @@ class _MessageWindowState extends State<MessageWindow> {
 
 // A Row in view of sent / received messages
 class Message extends StatelessWidget {
-  const Message({Key? key, required this.sender, required this.content})
+  const Message(
+      {Key? key, required this.sender, required this.content, required this.me})
       : super(key: key);
 
   final String sender;
   final String content;
+  final String me;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
+    return Column(
+      crossAxisAlignment:
+          sender == me ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
-        Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Text(
-              sender,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            )),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: Text(content),
-          ),
-        )
+        Text(
+          sender,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        Text(content)
       ],
     );
   }

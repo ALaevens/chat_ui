@@ -53,6 +53,18 @@ Future<String> accountIdToDisplayName(String id) async {
   }
 }
 
+Future<String> usernameToDisplayName(String username) async {
+  String accountID = await checkExists(username);
+
+  if (accountID == "") {
+    return "";
+  }
+
+  String displayName = await accountIdToDisplayName(accountID);
+
+  return displayName;
+}
+
 Future<List<List<String>>> loadHistory(
     String loginToken, String user1, String user2) async {
   final String REQUEST_URL = BASE_URL + "/chat/$user1/$user2/";
@@ -86,65 +98,3 @@ Future<List<List<String>>> loadHistory(
     return [];
   }
 }
-
-// void main(List<String> arguments) async {
-//   // LOGIN
-//   stdout.write("Login:\n  username: ");
-//   String username = stdin.readLineSync() ?? "";
-
-//   stdout.write("  Password: ");
-//   String password = stdin.readLineSync() ?? "";
-
-//   if (username == "" || password == "") {
-//     return;
-//   } else {
-//     username = username.toString();
-//     password = password.toString();
-//   }
-
-//   String tok = await login(username, password);
-
-//   // GET RECIPIENT AND MAKE SURE THEY EXIST
-//   stdout.write("Send message to (username): ");
-//   var receivename = stdin.readLineSync() ?? "";
-//   var exists = await checkExists(receivename);
-
-//   if (exists == "") {
-//     return;
-//   }
-
-//   // LOAD HISTORY
-//   List<dynamic> hist = await loadHistory(tok, username, receivename);
-//   print("History: ");
-//   hist.forEach((element) {
-//     print(element[0] + ": " + element[1]);
-//   });
-
-//   // SOCKET CONNECTION
-//   final sock = await WebSocket.connect(
-//       BASE_WS_URL + "/ws/chat/$username/$receivename",
-//       headers: {"Authorization": "Token " + tok});
-
-//   Map<String, String> userCache = {};
-
-//   // on recieve
-//   sock.listen((event) async {
-//     Map<String, dynamic> json = jsonDecode(event);
-//     String displayName = userCache[json["username"]] ?? "";
-
-//     // only request display name if absolutely necessary
-//     if (displayName == "") {
-//       String accountID = await checkExists(json["username"]);
-//       displayName = await accountIdToDisplayName(accountID);
-//       userCache[json["username"]] = displayName;
-//     }
-
-//     print(displayName + ": " + json['message']);
-//   });
-
-//   // on send
-//   stdin.listen((event) {
-//     String message = utf8.decode(event).trim();
-//     sock.add(json.encode({"message": message}));
-//   });
-// }
