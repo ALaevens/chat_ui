@@ -2,21 +2,6 @@ import 'package:chat_ui/chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'api_helpers.dart';
 
-// class LoginScreen extends StatelessWidget {
-//   const LoginScreen({Key? key}) : super(key: key);
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: 'Login',
-//       theme: ThemeData(
-//         primarySwatch: Colors.blue,
-//       ),
-//       home: const LoginPage(),
-//     );
-//   }
-// }
-
 class LoginPage extends StatelessWidget {
   const LoginPage({Key? key}) : super(key: key);
 
@@ -26,12 +11,15 @@ class LoginPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Login to Latandao"),
       ),
-      body: const Center(
+      body: const SingleChildScrollView(
+        child: Center(
           child: FractionallySizedBox(
-        widthFactor: 0.6,
-        child: Card(
-            child: Padding(padding: EdgeInsets.all(8), child: LoginForm())),
-      )),
+            widthFactor: 0.9,
+            child: Card(
+                child: Padding(padding: EdgeInsets.all(8), child: LoginForm())),
+          ),
+        ),
+      ),
     );
   }
 }
