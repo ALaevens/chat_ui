@@ -4,12 +4,9 @@ import 'package:flutter/material.dart';
 
 void main() {
   runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
     title: "Latandao Chat",
     initialRoute: "/login",
-    // routes: {
-    //   "/login": (context) => const LoginPage(),
-    //   "/chat": (context) => const ChatPage(),
-    // },
     onGenerateRoute: (RouteSettings settings) {
       print('build route for ${settings.name}');
       var routes = <String, WidgetBuilder>{

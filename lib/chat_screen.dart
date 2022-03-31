@@ -155,13 +155,25 @@ class _MessageWindowState extends State<MessageWindow> {
   // add one to history
   void addMessage(String sender, String content) {
     setState(() {
-      history.add([sender, content]);
+      if (history.isNotEmpty && history.last[0] == sender) {
+        history.last[1] += "\n" + content;
+      } else {
+        history.add([sender, content]);
+      }
     });
   }
 
   // set entire history list
   void setHistory(List<List<String>> hist) {
-    setState(() => history = hist);
+    List<List<String>> tempHistory = [];
+    for (List<String> row in hist) {
+      if (tempHistory.isNotEmpty && tempHistory.last[0] == row[0]) {
+        tempHistory.last[1] += "\n" + row[1];
+      } else {
+        tempHistory.add(row);
+      }
+    }
+    setState(() => history = tempHistory);
   }
 
   void setDisplayName(String display) {
@@ -170,18 +182,13 @@ class _MessageWindowState extends State<MessageWindow> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: history.length * 2,
+    return ListView.separated(
+      itemCount: history.length,
       itemBuilder: (context, i) {
-        if (i % 2 == 0) {
-          return Message(
-              sender: history[i ~/ 2][0],
-              content: history[i ~/ 2][1],
-              me: myDisplay);
-        } else {
-          return const Divider();
-        }
+        return Message(
+            sender: history[i][0], content: history[i][1], me: myDisplay);
       },
+      separatorBuilder: (BuildContext context, int index) => const Divider(),
     );
   }
 }
@@ -198,16 +205,25 @@ class Message extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment:
-          sender == me ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: [
-        Text(
-          sender,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+    return Container(
+      color: sender == me ? Colors.blue[100] : Colors.green[100],
+      child: Padding(
+        padding: EdgeInsets.all(4),
+        child: Column(
+          crossAxisAlignment:
+              sender == me ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          children: [
+            Text(
+              sender,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text(
+              content,
+              textAlign: sender == me ? TextAlign.right : TextAlign.left,
+            )
+          ],
         ),
-        Text(content)
-      ],
+      ),
     );
   }
 }
