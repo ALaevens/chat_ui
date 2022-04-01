@@ -3,25 +3,6 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
 
-// class ChatScreen extends StatelessWidget {
-//   const ChatScreen({Key? key}) : super(key: key);
-
-//   // This widget is the root of your application.
-//   @override
-//   Widget build(BuildContext context) {
-//     return MaterialApp(
-//       title: 'Flutter Demo',
-//       theme: ThemeData(
-//         primarySwatch: Colors.blue,
-//       ),
-//       home: const ChatPage(
-//         user: "alaevens",
-//         receiver: "testuser",
-//       ),
-//     );
-//   }
-// }
-
 class ChatArguments {
   final String username;
   final String token;
@@ -53,14 +34,13 @@ class _ChatPageState extends State<ChatPage> {
     usernameToDisplayName(widget.args.username).then((value) {
       _messageListKey.currentState!.setDisplayName(value);
     });
-    // only need to pull the history once
-    loadHistory(widget.args.token, widget.args.username, widget.args.receiver)
-        .then((List<List<String>> value) {
-      _messageListKey.currentState!.setHistory(value);
-    });
 
-    // only need to create the socket once
-    _createSocket(widget.args.token);
+    getRoomByUser(widget.args.token, widget.args.username, widget.args.receiver)
+        .then((Map<String, dynamic> value) {
+      _messageListKey.currentState!.setHistory(value["history"]);
+
+      _createSocket(widget.args.token, value["room_id"]);
+    });
   }
 
   @override
@@ -69,29 +49,29 @@ class _ChatPageState extends State<ChatPage> {
     super.dispose();
   }
 
-  void _createSocket(String token) async {
+  void _createSocket(String token, String room) async {
     // form websocket connection
-    WebSocket sock = await WebSocket.connect(
-        BASE_WS_URL +
-            "/ws/chat/${widget.args.username}/${widget.args.receiver}",
+    WebSocket sock = await WebSocket.connect(BASE_WS_URL + "/ws/chat/$room",
         headers: {"Authorization": "Token " + token});
 
     setState(() => ws = sock);
 
     // Set up a listener on the new socket.
     ws.listen((event) async {
+      print(event);
       Map<String, dynamic> json = jsonDecode(event);
-      String displayName = userCache[json["username"]] ?? "";
+      String accountID = json["account_id"];
+      String displayName = userCache[json["account_id"]] ?? "";
 
-      // use the username to fetch the display name, but only when its not known
+      // only request display name if absolutely necessary
       if (displayName == "") {
-        String accountID = await checkExists(json["username"]);
         displayName = await accountIdToDisplayName(accountID);
-        userCache[json["username"]] = displayName;
+        userCache[accountID] = displayName;
       }
 
       // add the new message to the display
-      _messageListKey.currentState!.addMessage(displayName, json["message"]);
+      _messageListKey.currentState!
+          .addMessage([accountID, displayName, json["message"]]);
     });
   }
 
@@ -153,12 +133,12 @@ class _MessageWindowState extends State<MessageWindow> {
   String myDisplay = "";
 
   // add one to history
-  void addMessage(String sender, String content) {
+  void addMessage(List<String> row) {
     setState(() {
-      if (history.isNotEmpty && history.last[0] == sender) {
-        history.last[1] += "\n" + content;
+      if (history.isNotEmpty && history.last[0] == row[0]) {
+        history.last[2] += "\n" + row[2];
       } else {
-        history.add([sender, content]);
+        history.add(row);
       }
     });
   }
@@ -168,7 +148,8 @@ class _MessageWindowState extends State<MessageWindow> {
     List<List<String>> tempHistory = [];
     for (List<String> row in hist) {
       if (tempHistory.isNotEmpty && tempHistory.last[0] == row[0]) {
-        tempHistory.last[1] += "\n" + row[1];
+        // if account id matches, append message instead
+        tempHistory.last[2] += "\n" + row[2];
       } else {
         tempHistory.add(row);
       }
@@ -186,7 +167,7 @@ class _MessageWindowState extends State<MessageWindow> {
       itemCount: history.length,
       itemBuilder: (context, i) {
         return Message(
-            sender: history[i][0], content: history[i][1], me: myDisplay);
+            sender: history[i][1], content: history[i][2], me: myDisplay);
       },
       separatorBuilder: (BuildContext context, int index) => const Divider(),
     );

@@ -65,36 +65,53 @@ Future<String> usernameToDisplayName(String username) async {
   return displayName;
 }
 
-Future<List<List<String>>> loadHistory(
+Future<Map<String, dynamic>> getRoom(http.Response response) async {
+  if (response.statusCode == 200) {
+    Map<String, String> idCache = {};
+    Map<String, dynamic> json = jsonDecode(response.body);
+    var messages = json["messages"];
+    var room_id = json["room_id"];
+    List<List<String>> history = [];
+
+    for (Map<String, dynamic> messageRow in messages) {
+      String accountID = messageRow["owner"];
+      String display = idCache[accountID] ?? "";
+
+      // only get display name if absolutely necessary
+      if (display == "") {
+        display = await accountIdToDisplayName(accountID);
+        idCache[accountID] = display;
+      }
+
+      history.add([accountID, display, messageRow["message"]]);
+    }
+
+    return {"room_id": room_id, "history": history};
+  } else {
+    return {};
+  }
+}
+
+Future<Map<String, dynamic>> getRoomByUser(
     String loginToken, String user1, String user2) async {
-  final String REQUEST_URL = BASE_URL + "/chat/$user1/$user2/";
+  final String REQUEST_URL = BASE_URL + "/chat/users/$user1/$user2/";
 
   final http.Response response =
       await http.get(Uri.parse(REQUEST_URL), headers: {
     HttpHeaders.authorizationHeader: "Token $loginToken",
   });
-  Map<String, String> userCache = {};
 
-  if (response.statusCode == 200) {
-    Map<String, dynamic> json = jsonDecode(response.body);
-    var messages = json["messages"];
-    List<List<String>> history = [];
+  return getRoom(response);
+}
 
-    for (Map<String, dynamic> messageRow in messages) {
-      String userID = messageRow["owner"];
-      String display = userCache[userID] ?? "";
+Future<Map<String, dynamic>> getRoomByAccount(
+    String loginToken, String account1, String account2) async {
+  final String REQUEST_URL = BASE_URL + "/chat/accounts/$account1/$account2/";
 
-      // only get display name if absolutely necessary
-      if (display == "") {
-        display = await accountIdToDisplayName(userID);
-        userCache[userID] = display;
-      }
+  final http.Response response =
+      await http.get(Uri.parse(REQUEST_URL), headers: {
+    HttpHeaders.authorizationHeader: "Token $loginToken",
+  });
 
-      history.add([display, messageRow["message"]]);
-    }
-
-    return history;
-  } else {
-    return [];
-  }
+  return getRoom(response);
 }
